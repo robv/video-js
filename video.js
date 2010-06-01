@@ -33,7 +33,8 @@ var VideoJS = Class.extend({
     this.playControl.addEventListener("click", this.onPlayControlClick.context(this), false);
     // Make a click on the video act like a click on the play button.
     this.video.addEventListener("click", this.onPlayControlClick.context(this), false);
-
+    // Make a click on the poster image act like a click on the play button.
+    this.poster.addEventListener("click", this.onPlayControlClick.context(this), false);
     // Listen for drags on the progress bar
     this.progressHolder.addEventListener("mousedown", this.onProgressHolderMouseDown.context(this), false);
     // Listen for a release on the progress bar
@@ -51,8 +52,12 @@ var VideoJS = Class.extend({
 
     // Listen for the mouse move the video. Used to reveal the controller.
     this.video.addEventListener("mousemove", this.onVideoMouseMove.context(this), false);
+    // Listen for the mouse move the poster image. Used to reveal the controller.
+    this.poster.addEventListener("mousemove", this.onVideoMouseMove.context(this), false);
     // Listen for the mouse moving out of the video. Used to hide the controller.
     this.video.addEventListener("mouseout", this.onVideoMouseOut.context(this), false);
+    // Listen for the mouse moving out of the poster image. Used to hide the controller.
+    this.poster.addEventListener("mouseout", this.onVideoMouseOut.context(this), false);
     // Have to add the mouseout to the controller too or it may not hide.
     // For some reason the same isn't needed for mouseover
     this.controls.addEventListener("mouseout", this.onVideoMouseOut.context(this), false);
@@ -88,8 +93,14 @@ var VideoJS = Class.extend({
       </ul>
     */
 
-    
+    this.poster = document.createElement("img");
 
+    // Add the controls to the video's container
+    this.video.parentNode.appendChild(this.poster);  
+	this.poster.src = this.video.poster;
+
+    this.poster.style.left = "0px";
+    this.poster.style.position= "absolute";
     // Create a list element to hold the different controls
     this.controls = document.createElement("ul");
 
@@ -178,6 +189,7 @@ var VideoJS = Class.extend({
     // Make sure the controls are visible
     if (this.controls.style.display == 'none') return;
 
+    this.poster.style.width = this.video.offsetWidth + "px";
     this.controls.style.top = (this.video.offsetHeight - this.controls.offsetHeight) + "px";
     this.controls.style.left = "0px";
     this.controls.style.width = this.video.offsetWidth + "px";
@@ -191,6 +203,7 @@ var VideoJS = Class.extend({
 
   // When the video is played
   onPlay: function(event){
+  	this.poster.style.display = "none";
     this.playControl.className = "vjs-play-control vjs-pause";
     this.trackPlayProgress();
   },
