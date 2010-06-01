@@ -23,6 +23,39 @@ video.video-js { background-color: #000; }
   -moz-box-shadow: 0px 1px 3px #000; 
 }
 
+/* Spinner */
+.vjs-spinner div {
+	height: 30px;
+	left: 45px;
+	position: absolute;
+	top: 35px;
+	width: 10px;
+}
+.vjs-spinner{
+  -webkit-animation-name: rotateThis;
+  -webkit-animation-duration:2s;
+  -webkit-animation-iteration-count:infinite;
+  -webkit-animation-timing-function:linear;
+  -webkit-transform: scale(1.5);
+	height: 100px;
+	position: absolute;
+	width: 100px;
+}
+
+@-webkit-keyframes rotateThis {
+  from {-webkit-transform:scale(0.5) rotate(0deg);}
+  to {-webkit-transform:scale(0.5) rotate(360deg);}
+} 
+
+.vjs-spinner div { -webkit-transform: rotate(0deg) translate(0px, -40px); background: #000000;  }
+.vjs-spinner div:nth-child(1) { -webkit-transform: rotate(45deg) translate(0px, -40px); background: #404040;  }
+.vjs-spinner div:nth-child(2) { -webkit-transform: rotate(90deg) translate(0px, -40px); background: #5E5E5E;  }
+.vjs-spinner div:nth-child(3) { -webkit-transform: rotate(135deg) translate(0px, -40px); background: #808080;  }
+.vjs-spinner div:nth-child(4) { -webkit-transform: rotate(180deg) translate(0px, -40px); background: #9E9E9E;  }
+.vjs-spinner div:nth-child(5) { -webkit-transform: rotate(225deg) translate(0px, -40px); background: #BFBFBF;  }
+.vjs-spinner div:nth-child(6) { -webkit-transform: rotate(270deg) translate(0px, -40px); background: #E0E0E0;  }
+.vjs-spinner div:nth-child(7) { -webkit-transform: rotate(315deg) translate(0px, -40px); background: #030303;  }
+
 .vjs-controls > li:first-child { margin-left: 5px; }
 .vjs-controls > li:last-child { margin-right: 0; }
 
