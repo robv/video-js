@@ -15,8 +15,10 @@ var VideoJS = Class.extend({
     this.num = num;
     this.box = element.parentNode;
 
+	this.video.volume = localStorage["volume"];
+	
     this.buildController();
-    this.showController();
+    this.positionController();
 
     // Listen for when the video is played
     this.video.addEventListener("play", this.onPlay.context(this), false);
@@ -28,12 +30,19 @@ var VideoJS = Class.extend({
     this.video.addEventListener('volumechange',this.onVolumeChange.context(this),false);
     // Listen for video errors
     this.video.addEventListener('error',this.onError.context(this),false);
+	// Propery position controls when data is loaded
+	this.video.addEventListener("loadeddata", this.onLoadedData.context(this), false);
+	// When seeking occurs
+	this.video.addEventListener("seeking", this.onSeeking.context(this), false);
+	// When seeking has ended
+	this.video.addEventListener("seeked", this.onSeeked.context(this), false);
 
     // Listen for clicks on the play/pause button
     this.playControl.addEventListener("click", this.onPlayControlClick.context(this), false);
     // Make a click on the video act like a click on the play button.
     this.video.addEventListener("click", this.onPlayControlClick.context(this), false);
-
+    // Make a click on the poster image act like a click on the play button.
+    this.poster.addEventListener("click", this.onPlayControlClick.context(this), false);
     // Listen for drags on the progress bar
     this.progressHolder.addEventListener("mousedown", this.onProgressHolderMouseDown.context(this), false);
     // Listen for a release on the progress bar
@@ -49,18 +58,22 @@ var VideoJS = Class.extend({
     // Listen for clicks on the button
     this.fullscreenControl.addEventListener("click", this.onFullscreenControlClick.context(this), false);
 
-    // Listen for the mouse over the video. Used to reveal the controller.
-    this.video.addEventListener("mouseover", this.onVideoMouseOver.context(this), false);
+    // Listen for the mouse move the video. Used to reveal the controller.
+    this.video.addEventListener("mousemove", this.onVideoMouseMove.context(this), false);
+    // Listen for the mouse move the poster image. Used to reveal the controller.
+    this.poster.addEventListener("mousemove", this.onVideoMouseMove.context(this), false);
     // Listen for the mouse moving out of the video. Used to hide the controller.
     this.video.addEventListener("mouseout", this.onVideoMouseOut.context(this), false);
+    // Listen for the mouse moving out of the poster image. Used to hide the controller.
+    this.poster.addEventListener("mouseout", this.onVideoMouseOut.context(this), false);
     // Have to add the mouseout to the controller too or it may not hide.
     // For some reason the same isn't needed for mouseover
     this.controls.addEventListener("mouseout", this.onVideoMouseOut.context(this), false);
   },
 
   buildController: function(){
-
-    /* Creating this HTML
+  	
+  	    /* Creating this HTML
       <ul class="vjs-controls">
         <li class="vjs-play-control vjs-play">
           <span></span>
@@ -87,9 +100,21 @@ var VideoJS = Class.extend({
         </li>
       </ul>
     */
-
     
+	// Add the video poster to the video's container, to fix autobuffer bug
+    this.poster = document.createElement("img");
+    this.video.parentNode.appendChild(this.poster);  
 
+    // Add image data and style it correctly
+	this.poster.src = this.video.poster;
+    this.poster.style.left = "0px";
+    this.poster.style.top= "0px";
+    this.poster.style.display= "block";
+    this.poster.style.position= "absolute";
+    this.poster.style.height = "100%";
+    this.poster.style.width = "100%";
+ 	
+  	
     // Create a list element to hold the different controls
     this.controls = document.createElement("ul");
 
@@ -165,12 +190,21 @@ var VideoJS = Class.extend({
     this.controls.appendChild(this.fullscreenControl);
     this.fullscreenControl.className = "vjs-fullscreen-control";
     this.fullscreenControl.innerHTML = "<ul><li></li><li></li><li></li><li></li></ul>";
+    
+    //Loading spinner
+    this.spinner = document.createElement("div");
+    this.video.parentNode.appendChild(this.spinner);
+    this.spinner.className = "vjs-spinner";
+    this.spinner.innerHTML = "<div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div>";
+    this.spinner.style.left = (this.video.offsetWidth-100)/2 +"px";
+    this.spinner.style.top= (this.video.offsetHeight-100)/2 +"px";
   },
 
   // Show the controller
   showController: function(){
     this.controls.style.display = "block";
     this.positionController();
+    
   },
 
   // Place controller relative to the video's position
@@ -178,10 +212,17 @@ var VideoJS = Class.extend({
     // Make sure the controls are visible
     if (this.controls.style.display == 'none') return;
 
+	//Size the poster image
+    this.poster.style.height = this.video.offsetHeight + "px";
+    this.poster.style.width = this.video.offsetWidth + "px";
+    //Position controls
     this.controls.style.top = (this.video.offsetHeight - this.controls.offsetHeight) + "px";
     this.controls.style.left = "0px";
     this.controls.style.width = this.video.offsetWidth + "px";
     this.sizeProgressBar();
+    //Position spinner
+    this.spinner.style.left = (this.video.offsetWidth-100)/2 +"px";
+    this.spinner.style.top= (this.video.offsetHeight-100)/2 +"px";
   },
 
   // Hide the controller
@@ -191,8 +232,11 @@ var VideoJS = Class.extend({
 
   // When the video is played
   onPlay: function(event){
+  	this.poster.style.display = "none";
+  	this.video.volume = localStorage["volume"];
     this.playControl.className = "vjs-play-control vjs-pause";
     this.trackPlayProgress();
+    this.updateVolumeDisplay();
   },
 
   // When the video is paused
@@ -216,6 +260,19 @@ var VideoJS = Class.extend({
     console.log(this.video.error);
   },
 
+  onLoadedData: function(event){
+  	this.showController(); 
+	this.positionController();
+	this.spinner.style.display = "none";
+  },
+  
+  onSeeking: function(event){
+	this.spinner.style.display = "absolute";
+  },
+  onSeeked: function(event){
+	this.spinner.style.display = "none";
+  },
+  
   // React to clicks on the play/pause button
   onPlayControlClick: function(event){
     if (this.video.paused) {
@@ -224,7 +281,6 @@ var VideoJS = Class.extend({
       this.video.pause();
     }
   },
-
   // Adjust the play position when the user drags on the progress bar
   onProgressHolderMouseDown: function(event){
     this.stopTrackingPlayProgress();
@@ -286,8 +342,10 @@ var VideoJS = Class.extend({
     }
   },
 
-  onVideoMouseOver: function(event){
+  onVideoMouseMove: function(event){
     this.showController();
+    clearInterval(this.mouseMoveTimeout);
+    this.mouseMoveTimeout = setTimeout(function(){this.hideController(); }.context(this), 4000);
   },
 
   onVideoMouseOut: function(event){
@@ -348,6 +406,7 @@ var VideoJS = Class.extend({
       newVol = 0;
     }
     this.video.volume = newVol;
+    localStorage["volume"] = this.video.volume;
   },
 
   // Update the volume control display
@@ -356,7 +415,7 @@ var VideoJS = Class.extend({
     var volNum = Math.floor(this.video.volume * 6);
     for(var i=0; i<6; i++) {
       if (i < volNum) {
-        this.volumeDisplay.children[i].style.borderColor = "#fff";
+        this.volumeDisplay.children[i].style.borderColor = "#FF2A06";
       } else {
         this.volumeDisplay.children[i].style.borderColor = "#555";
       }
@@ -393,7 +452,8 @@ var VideoJS = Class.extend({
     this.controls.style.position = "absolute";
     this.positionController();
     this.fullscreenControl.className = "vjs-fullscreen-control";
-    this.box.className = "video-js-box";
+    this.box.className = "video-js-box tedHTML5B";
+
   },
 
   // Attempt to block the ability to select text while dragging controls
